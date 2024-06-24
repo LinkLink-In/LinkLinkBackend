@@ -1,36 +1,49 @@
 from fastapi import FastAPI
-from auth import fastapi_users, auth_backend
+
+from auth.routes import *
 from auth.schemas import UserRead, UserCreate, UserUpdate
 
-app = FastAPI()
+from config import APP_META
+
+from links.routes import router as link_router
+from banners.routes import router as banner_router
+from redirects.routes import router as redirect_router
+
+app = FastAPI(**APP_META)
 
 app.include_router(
-    fastapi_users.get_auth_router(auth_backend),
+    auth_router,
     prefix='/auth',
     tags=['auth']
 )
 
 app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
+    register_router,
     prefix='/auth',
     tags=['auth']
 )
 
 app.include_router(
-    fastapi_users.get_verify_router(UserRead),
+    verify_router,
     prefix='/auth',
     tags=['auth']
 )
 
 app.include_router(
-    fastapi_users.get_reset_password_router(),
+    reset_password_router,
     prefix='/auth',
     tags=['auth']
 )
 
 app.include_router(
-    fastapi_users.get_users_router(UserRead, UserUpdate),
+    users_router,
     prefix="/users",
     tags=["users"],
 )
+
+app.include_router(link_router)
+
+app.include_router(banner_router)
+
+app.include_router(redirect_router)
 
