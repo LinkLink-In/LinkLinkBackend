@@ -16,19 +16,18 @@ services:
     depends_on:
       - postgres_db
     networks:
-      cc_network:
+      linklink_network:
 
   postgres_db:
-    container_name: currency_db
-    restart: always
     image: 'postgres:latest'
+    restart: always
     env_file:
       - .env
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     networks:
-      cc_network:
+      linklink_network:
 
 networks:
-  cc_network:
+  linklink_network:
     driver: bridge
