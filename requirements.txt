@@ -6,5 +6,7 @@ pydantic
 sqlalchemy
 alembic
 asyncpg
+sqlmodel
+psycopg2-binary
 
 pytest
