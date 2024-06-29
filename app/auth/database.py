@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import Base, get_async_session
 
+from links.models import Link
+from banners.models import Banner
+
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
     name = Column(String, nullable=False)

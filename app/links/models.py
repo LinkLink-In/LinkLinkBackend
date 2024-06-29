@@ -3,6 +3,8 @@ from sqlalchemy.orm import relationship
 
 from core.database import Base
 
+from redirects.models import Redirect
+
 
 class Link(Base):
     __tablename__ = 'links'
@@ -14,7 +16,7 @@ class Link(Base):
     redirects_left = Column(Integer, nullable=True)
     passphrase_hash = Column(String, nullable=True)
     banner_id = Column(Uuid, ForeignKey('banners.id'), nullable=True)
-    owner_id = Column(Uuid, ForeignKey('users.id'))
+    owner_id = Column(Uuid, ForeignKey('user.id'))
 
     banner = relationship('Banner', back_populates='links')
     owner = relationship('User', back_populates='links')
