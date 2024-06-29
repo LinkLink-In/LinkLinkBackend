@@ -33,6 +33,7 @@ if config.config_file_name is not None:
 from banners.models import *
 from links.models import *
 from core.models import *
+from auth.database import *
 
 target_metadata = core.database.Base.metadata
 
