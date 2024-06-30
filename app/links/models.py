@@ -1,5 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Uuid
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import TIMESTAMP
 
 from core.database import Base
 
@@ -11,7 +12,7 @@ class Link(Base):
 
     short_id = Column(String, primary_key=True)
     redirect_url = Column(String)
-    expiration_date = Column(DateTime, nullable=True)
+    expiration_date = Column(type_=TIMESTAMP(timezone=True))
     redirects_limit = Column(Integer, nullable=True)
     redirects_left = Column(Integer, nullable=True)
     passphrase_hash = Column(String, nullable=True)
