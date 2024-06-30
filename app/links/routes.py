@@ -1,4 +1,3 @@
-from typing import Annotated, AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
@@ -7,10 +6,8 @@ from auth import current_user
 from core.database import get_async_session
 
 from .schemas import LinkRead, LinkCreate, LinkUpdate
-from pydantic import Json
 
 from links.models import *
-from auth.database import User
 
 router = APIRouter(
     prefix='/links',
@@ -48,7 +45,6 @@ async def update_link(short_id: str, link: LinkUpdate,
                       db: AsyncSession = Depends(get_async_session)):
     res = await db.execute(update(Link).where(Link.short_id == short_id).values(**link.dict()))
     await db.commit()
-    # await db.refresh(res)
     return await db.get(Link, link.short_id)
 
 
