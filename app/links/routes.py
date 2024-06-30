@@ -30,10 +30,10 @@ async def create_link(link: LinkCreate, user=Depends(current_user),
                    redirect_url=link.redirect_url,
                    expiration_date=link.expiration_date,
                    redirects_limit=link.redirects_limit,
-                   redirects_left=link.redirect_left,
+                   redirects_left=link.redirects_left,
                    passphrase_hash=link.passphrase_hash,
                    banner_id=link.banner_id,
-                   owner_id=link.owner_id)
+                   owner_id=user.id)
     db.add(newLink)
     await db.commit()
     await db.refresh(newLink)
