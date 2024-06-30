@@ -18,8 +18,10 @@ router = APIRouter(
 
 
 @router.get('/{banner_id}', response_model=BannerRead)
-async def get_banner(banner_id: UUID):
-    pass
+async def get_banner(banner_id: UUID,
+                     user: User = Depends(current_user),
+                     db: Session = Depends(get_async_session)):
+    return await db.get(models.Banner, banner_id)
 
 
 @router.post('/create', response_model=BannerRead)
