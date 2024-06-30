@@ -13,6 +13,10 @@ class LinkBase(BaseModel):
     passphrase_hash: str | None
     banner_id: UUID | None
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 class LinkRead(LinkBase):
     owner_id: UUID
@@ -23,4 +27,4 @@ class LinkCreate(LinkBase):
 
 
 class LinkUpdate(LinkBase):
-    redirect_left: int | None
+    redirects_left: int | None
