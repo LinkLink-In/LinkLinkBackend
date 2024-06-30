@@ -1,7 +1,15 @@
+import uuid
 from uuid import UUID
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from .schemas import BannerRead, BannerCreate, BannerUpdate
+
+from core.database import get_async_session
+from auth.database import User
+from auth import current_user
+
+from . import models
 
 router = APIRouter(
     prefix='/banners',
@@ -15,8 +23,14 @@ async def get_banner(banner_id: UUID):
 
 
 @router.post('/create', response_model=BannerRead)
-async def create_banner(banner: BannerCreate):
-    pass
+async def create_banner(banner: BannerCreate,
+                        user: User = Depends(current_user),
+                        db: Session = Depends(get_async_session)):
+    db_banner = models.Banner(**banner.dict(), id=uuid.uuid4(), owner_id=user.id)
+    db.add(db_banner)
+    await db.commit()
+    await db.refresh(db_banner)
+    return db_banner
 
 
 @router.post('/{banner_id}', response_model=BannerRead)

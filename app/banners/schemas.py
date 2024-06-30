@@ -14,7 +14,7 @@ class BannerRead(BannerBase):
 
 
 class BannerCreate(BannerBase):
-    owner_id: UUID
+    pass
 
 
 class BannerUpdate(BannerBase):
