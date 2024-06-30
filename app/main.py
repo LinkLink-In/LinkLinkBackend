@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from auth.routes import *
 from auth.schemas import UserRead, UserCreate, UserUpdate
+from starlette.middleware.cors import CORSMiddleware
 
 from config import APP_META
 
@@ -10,6 +11,18 @@ from banners.routes import router as banner_router
 from redirects.routes import router as redirect_router
 
 app = FastAPI(**APP_META)
+
+origins = [
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(
     auth_router,
