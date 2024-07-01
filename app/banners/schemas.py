@@ -12,9 +12,12 @@ class BannerRead(BannerBase):
     id: UUID
     owner_id: UUID
 
+    class Config:
+        from_attributes = True
+
 
 class BannerCreate(BannerBase):
-    owner_id: UUID
+    pass
 
 
 class BannerUpdate(BannerBase):

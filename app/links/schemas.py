@@ -9,9 +9,13 @@ class LinkBase(BaseModel):
     redirect_url: str
     expiration_date: datetime
     redirects_limit: int
-    redirect_left: int
+    redirects_left: int
     passphrase_hash: str | None
     banner_id: UUID | None
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 
 class LinkRead(LinkBase):
@@ -19,8 +23,8 @@ class LinkRead(LinkBase):
 
 
 class LinkCreate(LinkBase):
-    owner_id: UUID
+    pass
 
 
 class LinkUpdate(LinkBase):
-    redirect_left: int | None
+    redirects_left: int | None
