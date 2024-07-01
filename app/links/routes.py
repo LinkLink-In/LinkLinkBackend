@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
@@ -25,14 +27,29 @@ async def get_link(short_id: str,
 @router.post('/create', response_model=LinkRead)
 async def create_link(link: LinkCreate, user=Depends(current_user),
                       db: AsyncSession = Depends(get_async_session)):
+
+    if link.expiration_date is None:
+        now = datetime.now()
+        link.expiration_date = now + timedelta(days=365 * 30)
+
+    if link.passphrase_hash is None:
+        link.passphrase_hash = "no.pass"
+
+    if link.redirects_limit is None:
+        link.redirects_limit = -1
+
+    if await db.get(Link, link.short_id) is not None:
+        raise HTTPException(status_code=418, detail="Link with such short url already exists")
+
     newLink = Link(short_id=link.short_id,
                    redirect_url=link.redirect_url,
                    expiration_date=link.expiration_date,
                    redirects_limit=link.redirects_limit,
-                   redirects_left=link.redirects_left,
+                   redirects_left=link.redirects_limit,
                    passphrase_hash=link.passphrase_hash,
                    banner_id=link.banner_id,
                    owner_id=user.id)
+
     db.add(newLink)
     await db.commit()
     await db.refresh(newLink)

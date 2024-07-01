@@ -1,5 +1,6 @@
 from uuid import UUID
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -7,11 +8,10 @@ from pydantic import BaseModel
 class LinkBase(BaseModel):
     short_id: str
     redirect_url: str
-    expiration_date: datetime
-    redirects_limit: int
-    redirects_left: int
-    passphrase_hash: str | None
-    banner_id: UUID | None
+    expiration_date: Optional[datetime] = None
+    redirects_limit: Optional[int] = None
+    passphrase_hash: Optional[str] = None
+    banner_id: UUID
 
     class Config:
         orm_mode = True
@@ -20,6 +20,7 @@ class LinkBase(BaseModel):
 
 class LinkRead(LinkBase):
     owner_id: UUID
+    redirects_left: int
 
 
 class LinkCreate(LinkBase):
@@ -27,4 +28,4 @@ class LinkCreate(LinkBase):
 
 
 class LinkUpdate(LinkBase):
-    redirects_left: int | None
+    redirects_left: Optional[int] = None
