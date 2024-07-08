@@ -21,6 +21,16 @@ router = APIRouter(
 async def get_link(short_id: str,
                    db: AsyncSession = Depends(get_async_session)):
     link = await db.get(Link, short_id)
+
+    if link is None:
+        raise HTTPException(status_code=400, detail="Such link is not present in the database")
+
+    if link.redirects_left == 0:
+        raise HTTPException(status_code=400, detail="This link has no redirects left")
+
+    if link.expiration_date < datetime.now():
+        raise HTTPException(status_code=400, detail="This link has been expired")
+
     return link
 
 
@@ -60,7 +70,7 @@ async def create_link(link: LinkCreate, user=Depends(current_user),
 async def update_link(short_id: str, link: LinkUpdate,
                       user=Depends(current_user),
                       db: AsyncSession = Depends(get_async_session)):
-    res = await db.execute(update(Link).where(Link.short_id == short_id).values(**link.dict()))
+    await db.execute(update(Link).where(Link.short_id == short_id).values(**link.dict()))
     await db.commit()
     return await db.get(Link, link.short_id)
 
