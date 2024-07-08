@@ -1,5 +1,6 @@
 import bcrypt
 from random import choices
+from datetime import datetime
 from re import match as rematch
 from string import ascii_letters
 
@@ -33,6 +34,12 @@ async def get_link(short_id: str,
 
     if not db_link:
         raise HTTPException(404, 'Link not found')
+
+    if db_link.redirects_left == 0:
+        raise HTTPException(status_code=410, detail="This link has no redirects left")
+
+    if db_link.expiration_date < datetime.now():
+        raise HTTPException(status_code=410, detail="This link has been expired")
 
     if user and db_link.owner_id == user.id:
         return LinkUserRead.from_orm(db_link)

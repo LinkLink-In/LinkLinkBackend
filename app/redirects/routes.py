@@ -3,13 +3,14 @@ from datetime import datetime
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select
 
 from core.database import get_async_session
 
 from .schemas import RedirectRead, RedirectCreate
 
 from redirects import models
+from links.models import Link
 
 router = APIRouter(
     prefix='/redirects',
@@ -26,6 +27,17 @@ async def get_redirect(redirect_id: UUID,
 @router.post('/create', response_model=RedirectRead)
 async def create_redirect(redirect: RedirectCreate,
                           db: AsyncSession = Depends(get_async_session)):
+    db_link = await db.get(Link, redirect.link_id)
+
+    if not db_link:
+        raise HTTPException(404, 'Link not found')
+
+    if db_link.redirects_left == 0:
+        raise HTTPException(status_code=410, detail="This link has no redirects left")
+
+    if db_link.expiration_date < datetime.now():
+        raise HTTPException(status_code=410, detail="This link has been expired")
+
     db_redirect = models.Redirect(id=uuid.uuid4(),
                                   link_id=redirect.link_id,
                                   redirected_at=datetime.now(),
@@ -37,6 +49,8 @@ async def create_redirect(redirect: RedirectCreate,
                                   language=redirect.language)
 
     db.add(db_redirect)
+
+    db_link.redirects_left -= 1
 
     await db.commit()
     await db.refresh(db_redirect)
