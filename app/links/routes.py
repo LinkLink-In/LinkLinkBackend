@@ -1,5 +1,6 @@
 import bcrypt
 from random import choice
+from re import match as rematch
 from string import ascii_letters
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +9,8 @@ from sqlalchemy import select
 from fastapi import APIRouter, Depends, HTTPException
 from auth import current_user, current_user_opt
 from core.database import get_async_session
+
+from config import URL_REGEX
 
 from .schemas import (LinkRead, LinkUserRead,
                       LinkCreate, LinkUpdate,
@@ -67,6 +70,9 @@ async def create_link(link: LinkCreate,
 
         if not db_banner:
             raise HTTPException(404, 'Banner not found')
+
+    if not rematch(URL_REGEX, link.redirect_url):
+        raise HTTPException(400, 'Invalid URL')
 
     passphrase_hash = bcrypt.hashpw(
         link.passphrase.encode('utf-8'),
