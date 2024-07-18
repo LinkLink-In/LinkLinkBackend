@@ -1,12 +1,14 @@
-fastapi
+fastapi~=0.111.0
 fastapi-users[sqlalchemy]
 
-pydantic
+pydantic~=2.7.3
 
-sqlalchemy
-alembic
+sqlalchemy~=2.0.31
+alembic~=1.13.2
 asyncpg
 sqlmodel
 psycopg2-binary
 
 pytest
+bcrypt~=4.1.2
+starlette~=0.37.2

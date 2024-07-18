@@ -1,13 +1,20 @@
+import bcrypt
+from random import choice
+from string import ascii_letters
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select
 
 from fastapi import APIRouter, Depends, HTTPException
-from auth import current_user
+from auth import current_user, current_user_opt
 from core.database import get_async_session
 
-from .schemas import LinkRead, LinkCreate, LinkUpdate
+from .schemas import (LinkRead, LinkUserRead,
+                      LinkCreate, LinkUpdate,
+                      LinkCheck)
 
 from . import models
+from banners.models import Banner
 
 router = APIRouter(
     prefix='/links',
@@ -15,22 +22,44 @@ router = APIRouter(
 )
 
 
-@router.get('/{short_id}', response_model=LinkRead)
+@router.get('/{short_id}', response_model=LinkRead | LinkUserRead)
 async def get_link(short_id: str,
+                   user=Depends(current_user_opt),
                    db: AsyncSession = Depends(get_async_session)):
-    return await db.get(models.Link, short_id)
+    db_link = await db.get(models.Link, short_id)
+
+    if not db_link:
+        raise HTTPException(404, 'Link not found')
+
+    if user and db_link.owner_id == user.id:
+        return LinkUserRead.from_orm(db_link)
+    else:
+        return LinkRead.from_orm(db_link)
 
 
-@router.post('/create', response_model=LinkRead)
+@router.put('/', response_model=LinkUserRead)
 async def create_link(link: LinkCreate,
                       user=Depends(current_user),
                       db: AsyncSession = Depends(get_async_session)):
-    db_link = models.Link(short_id=link.short_id,
+    if link.banner_id:
+        db_banner = await db.get(Banner, link.banner_id)
+
+        if not db_banner:
+            raise HTTPException(404, 'Banner not found')
+
+    passphrase_hash = bcrypt.hashpw(
+        link.passphrase.encode('utf-8'),
+        bcrypt.gensalt()
+    ).decode() if link.passphrase else None
+
+    short_id = ''.join(choice(ascii_letters) for _ in range(6))
+
+    db_link = models.Link(short_id=short_id,
                           redirect_url=link.redirect_url,
                           expiration_date=link.expiration_date,
                           redirects_limit=link.redirects_limit,
-                          redirects_left=link.redirects_left,
-                          passphrase_hash=link.passphrase_hash,
+                          redirects_left=link.redirects_limit,
+                          passphrase_hash=passphrase_hash,
                           banner_id=link.banner_id,
                           owner_id=user.id)
     db.add(db_link)
@@ -41,24 +70,60 @@ async def create_link(link: LinkCreate,
     return db_link
 
 
-@router.put('/{short_id}', response_model=LinkRead)
+@router.patch('/{short_id}', response_model=LinkUserRead)
 async def update_link(short_id: str, link: LinkUpdate,
                       user=Depends(current_user),
                       db: AsyncSession = Depends(get_async_session)):
-    await db.execute(
-        update(models.Link)
-        .where(models.Link.short_id == short_id)
-        .values(**link.dict())
-    )
+    if link.banner_id:
+        db_banner = await db.get(Banner, link.banner_id)
+
+        if not db_banner:
+            raise HTTPException(404, 'Banner not found')
+
+    db_link = await db.get(models.Link, short_id)
+
+    if not db_link:
+        raise HTTPException(404, 'Link not found')
+
+    if db_link.owner_id != user.id:
+        raise HTTPException(403, "You are not the owner of this link")
+
+    passphrase_hash = bcrypt.hashpw(
+        link.passphrase.encode('utf-8'),
+        bcrypt.gensalt()
+    ).decode() if link.passphrase else None
+
+    db_link.banner_id = link.banner_id
+    db_link.passphrase_hash = passphrase_hash
 
     await db.commit()
 
-    return await db.get(models.Link, link.short_id)
+    return db_link
 
 
-@router.get('/list/all', response_model=list[LinkRead])
-async def list_links(user=Depends(current_user),
+@router.delete('/{short_id}')
+async def delete_link(short_id: str,
+                      user=Depends(current_user),
+                      db: AsyncSession = Depends(get_async_session)):
+    db_link = await db.get(models.Link, short_id)
+
+    if not db_link:
+        raise HTTPException(404, 'Link not found')
+
+    if db_link.owner_id != user.id:
+        raise HTTPException(403, "You are not the owner of this link")
+
+    await db.delete(db_link)
+    await db.commit()
+
+
+@router.get('/', response_model=list[LinkUserRead])
+async def list_links(offset: int = 0, limit: int = 50,
+                     user=Depends(current_user),
                      db: AsyncSession = Depends(get_async_session)):
-    return [LinkRead.from_orm(link) for link in (await db.execute(
-        select(models.Link).where(models.Link.owner_id == user.id)
-    )).scalars().all()]
+    return list(map(LinkUserRead.from_orm, (await db.execute(
+        select(models.Link)
+        .filter(models.Link.owner_id == user.id)
+        .offset(offset)
+        .limit(limit)
+    )).scalars().all()))
