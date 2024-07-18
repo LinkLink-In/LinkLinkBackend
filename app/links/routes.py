@@ -34,7 +34,28 @@ async def get_link(short_id: str,
     if user and db_link.owner_id == user.id:
         return LinkUserRead.from_orm(db_link)
     else:
+        if db_link.passphrase_hash:
+            db_link.redirect_url = None
+
         return LinkRead.from_orm(db_link)
+
+
+@router.post('/{short_id}/check', response_model=LinkRead)
+async def check_passphrase(short_id: str, check_request: LinkCheck,
+                           db: AsyncSession = Depends(get_async_session)):
+    db_link = await db.get(models.Link, short_id)
+
+    if not db_link:
+        raise HTTPException(404, 'Link not found')
+
+    if not db_link.passphrase_hash:
+        raise HTTPException(400, 'Passphrase not required')
+
+    if bcrypt.checkpw(check_request.passphrase.encode('utf-8'),
+                      db_link.passphrase_hash.encode('utf-8')):
+        return db_link
+    else:
+        raise HTTPException(400, 'Invalid passphrase')
 
 
 @router.put('/', response_model=LinkUserRead)
