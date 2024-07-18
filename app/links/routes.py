@@ -1,5 +1,5 @@
 import bcrypt
-from random import choice
+from random import choices
 from re import match as rematch
 from string import ascii_letters
 
@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from auth import current_user, current_user_opt
 from core.database import get_async_session
 
-from config import URL_REGEX
+from config import URL_REGEX, URL_ALIAS_LENGTH
 
 from .schemas import (LinkRead, LinkUserRead,
                       LinkCreate, LinkUpdate,
@@ -79,7 +79,7 @@ async def create_link(link: LinkCreate,
         bcrypt.gensalt()
     ).decode() if link.passphrase else None
 
-    short_id = ''.join(choice(ascii_letters) for _ in range(6))
+    short_id = ''.join(choices(ascii_letters, k=URL_ALIAS_LENGTH))
 
     db_link = models.Link(short_id=short_id,
                           redirect_url=link.redirect_url,
