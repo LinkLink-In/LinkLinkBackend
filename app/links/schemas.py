@@ -5,26 +5,38 @@ from pydantic import BaseModel
 
 
 class LinkBase(BaseModel):
-    short_id: str
-    redirect_url: str
-    expiration_date: datetime
-    redirects_limit: int
-    redirects_left: int
-    passphrase_hash: str | None
-    banner_id: UUID | None
-
     class Config:
         orm_mode = True
         from_attributes = True
 
 
-class LinkRead(LinkBase):
-    owner_id: UUID
-
-
 class LinkCreate(LinkBase):
-    pass
+    redirect_url: str
+    expiration_date: datetime | None
+    redirects_limit: int | None
+    passphrase: str | None
+    banner_id: UUID | None
+
+
+class LinkRead(LinkBase):
+    short_id: str
+    redirect_url: str | None
+    banner_id: UUID | None
+
+
+class LinkUserRead(LinkBase):
+    short_id: str
+    redirect_url: str
+    expiration_date: datetime | None
+    redirects_limit: int | None
+    redirects_left: int | None
+    banner_id: UUID | None
+
+
+class LinkCheck(LinkBase):
+    passphrase: str
 
 
 class LinkUpdate(LinkBase):
-    redirects_left: int | None
+    passphrase: str | None
+    banner_id: UUID | None
