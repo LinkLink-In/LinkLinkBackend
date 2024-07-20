@@ -29,7 +29,7 @@ async def get_redirect(redirect_id: UUID,
     return db_redirect
 
 
-@router.put('/', response_model=RedirectRead)
+# @router.put('/', response_model=RedirectRead)
 async def create_redirect(redirect: RedirectCreate,
                           db: AsyncSession = Depends(get_async_session)):
     db_link = await db.get(Link, redirect.link_id)

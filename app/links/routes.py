@@ -7,7 +7,7 @@ from string import ascii_letters
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from auth import current_user, current_user_opt
 from core.database import get_async_session
 
@@ -20,6 +20,9 @@ from .schemas import (LinkRead, LinkUserRead,
 from . import models
 from banners.models import Banner
 
+from redirects.routes import create_redirect
+from redirects.schemas import RedirectCreate
+
 router = APIRouter(
     prefix='/links',
     tags=['links']
@@ -27,7 +30,8 @@ router = APIRouter(
 
 
 @router.get('/{short_id}', response_model=LinkRead | LinkUserRead)
-async def get_link(short_id: str,
+async def get_link(request: Request,
+                   short_id: str,
                    user=Depends(current_user_opt),
                    db: AsyncSession = Depends(get_async_session)):
     db_link = await db.get(models.Link, short_id)
@@ -46,6 +50,16 @@ async def get_link(short_id: str,
     else:
         if db_link.passphrase_hash:
             db_link.redirect_url = None
+        else:
+            await create_redirect(RedirectCreate(
+                link_id=db_link.short_id,
+                ip=request.client.host,
+                user_agent=request.headers.get('User-Agent'),
+                referrer=request.headers.get('Referer'),
+                browser=None,
+                platform=request.headers.get('Sec-Ch-Ua-Platform'),
+                language=request.headers.get('Accept-Language'),
+            ), db)
 
         return LinkRead.from_orm(db_link)
 
