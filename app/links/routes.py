@@ -111,7 +111,15 @@ async def create_link(link: LinkCreate,
         bcrypt.gensalt()
     ).decode() if link.passphrase else None
 
-    short_id = ''.join(choices(ascii_letters, k=URL_ALIAS_LENGTH))
+    if not link.short_id:
+        short_id = ''.join(choices(ascii_letters, k=URL_ALIAS_LENGTH))
+    else:
+        if not rematch(r'^[A-Za-z0-9]{5,15}$', link.short_id):
+            raise HTTPException(400,
+                                'short_id can contain only latin characters,'
+                                ' numbers and be from 5 to 15 in length')
+
+        short_id = link.short_id
 
     db_link = models.Link(short_id=short_id,
                           redirect_url=link.redirect_url,

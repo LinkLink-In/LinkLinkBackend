@@ -11,6 +11,7 @@ class LinkBase(BaseModel):
 
 
 class LinkCreate(LinkBase):
+    short_id: str | None
     redirect_url: str
     expiration_date: datetime | None
     redirects_limit: int | None
