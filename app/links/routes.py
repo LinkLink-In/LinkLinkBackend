@@ -59,13 +59,14 @@ async def get_link(request: Request,
                 browser=None,
                 platform=request.headers.get('Sec-Ch-Ua-Platform'),
                 language=request.headers.get('Accept-Language'),
-            ), user, db)
+            ), db=db)
 
         return LinkRead.from_orm(db_link)
 
 
 @router.post('/{short_id}/check', response_model=LinkRead)
-async def check_passphrase(short_id: str, check_request: LinkCheck,
+async def check_passphrase(request: Request,
+                           short_id: str, check_request: LinkCheck,
                            db: AsyncSession = Depends(get_async_session)):
     db_link = await db.get(models.Link, short_id)
 
@@ -77,6 +78,16 @@ async def check_passphrase(short_id: str, check_request: LinkCheck,
 
     if bcrypt.checkpw(check_request.passphrase.encode('utf-8'),
                       db_link.passphrase_hash.encode('utf-8')):
+        await create_redirect(RedirectCreate(
+            link_id=db_link.short_id,
+            ip=request.client.host,
+            user_agent=request.headers.get('User-Agent'),
+            referrer=request.headers.get('Referer'),
+            browser=None,
+            platform=request.headers.get('Sec-Ch-Ua-Platform'),
+            language=request.headers.get('Accept-Language'),
+        ), db=db)
+
         return db_link
     else:
         raise HTTPException(400, 'Invalid passphrase')
