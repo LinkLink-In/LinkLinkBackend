@@ -59,7 +59,7 @@ async def get_link(request: Request,
                 browser=None,
                 platform=request.headers.get('Sec-Ch-Ua-Platform'),
                 language=request.headers.get('Accept-Language'),
-            ), db)
+            ), user, db)
 
         return LinkRead.from_orm(db_link)
 
