@@ -21,10 +21,15 @@ router = APIRouter(
 @router.get('/{redirect_id}', response_model=RedirectRead)
 async def get_redirect(redirect_id: UUID,
                        db: AsyncSession = Depends(get_async_session)):
-    return await db.get(models.Redirect, redirect_id)
+    db_redirect = await db.get(models.Redirect, redirect_id)
+
+    if not db_redirect:
+        raise HTTPException(404, 'Link not found')
+
+    return db_redirect
 
 
-@router.post('/create', response_model=RedirectRead)
+@router.put('/', response_model=RedirectRead)
 async def create_redirect(redirect: RedirectCreate,
                           db: AsyncSession = Depends(get_async_session)):
     db_link = await db.get(Link, redirect.link_id)
@@ -58,9 +63,12 @@ async def create_redirect(redirect: RedirectCreate,
     return db_redirect
 
 
-@router.get('/list/{short_id}', response_model=list[RedirectRead])
-async def list_redirects(short_id: str,
+@router.get('/', response_model=list[RedirectRead])
+async def list_redirects(link_id: str, offset: int = 0, limit: int = 50,
                          db: AsyncSession = Depends(get_async_session)):
-    return [RedirectRead.from_orm(redirect) for redirect in (await db.execute(
-        select(models.Redirect).where(models.Redirect.link_id == short_id)
-    )).scalars().all()]
+    return list(map(RedirectRead.from_orm, (await db.execute(
+        select(models.Redirect)
+        .filter(models.Redirect.link_id == link_id)
+        .offset(offset)
+        .limit(limit)
+    )).scalars().all()))
