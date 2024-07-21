@@ -42,7 +42,7 @@ async def get_link(request: Request,
     if db_link.redirects_left == 0:
         raise HTTPException(status_code=410, detail="This link has no redirects left")
 
-    if db_link.expiration_date < datetime.now():
+    if db_link.expiration_date and db_link.expiration_date < datetime.now():
         raise HTTPException(status_code=410, detail="This link has been expired")
 
     if user and db_link.owner_id == user.id:
@@ -97,6 +97,9 @@ async def check_passphrase(request: Request,
 async def create_link(link: LinkCreate,
                       user=Depends(current_user),
                       db: AsyncSession = Depends(get_async_session)):
+    if await db.get(models.Link, link.short_id):
+        raise HTTPException(400, 'Such short link already exists')
+
     if link.banner_id:
         db_banner = await db.get(Banner, link.banner_id)
 
