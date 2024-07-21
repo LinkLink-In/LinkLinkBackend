@@ -97,6 +97,11 @@ async def check_passphrase(request: Request,
 async def create_link(link: LinkCreate,
                       user=Depends(current_user),
                       db: AsyncSession = Depends(get_async_session)):
+    db_link = await db.get(models.Link, link.short_id)
+
+    if db_link:
+        raise HTTPException(400, 'Such short link already exists')
+
     if link.banner_id:
         db_banner = await db.get(Banner, link.banner_id)
 
