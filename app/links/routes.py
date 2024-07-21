@@ -42,7 +42,7 @@ async def get_link(request: Request,
     if db_link.redirects_left == 0:
         raise HTTPException(status_code=410, detail="This link has no redirects left")
 
-    if db_link.expiration_date < datetime.now():
+    if db_link.expiration_date is not None and db_link.expiration_date < datetime.now():
         raise HTTPException(status_code=410, detail="This link has been expired")
 
     if user and db_link.owner_id == user.id:
