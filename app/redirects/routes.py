@@ -46,11 +46,12 @@ async def create_redirect(redirect: RedirectCreate,
     if not db_link:
         raise HTTPException(404, 'Link not found')
 
-    if db_link.redirects_left is not None and db_link.redirects_left == 0:
-        raise HTTPException(status_code=410, detail="This link has no redirects left")
+    if db_link.redirects_left:
+        if db_link.redirects_left == 0:
+            raise HTTPException(status_code=410, detail="This link has no redirects left")
 
-    if db_link.expiration_date is not None and db_link.expiration_date < datetime.now():
-        raise HTTPException(status_code=410, detail="This link has been expired")
+        if db_link.expiration_date < datetime.now():
+            raise HTTPException(status_code=410, detail="This link has been expired")
 
     db_redirect = models.Redirect(id=uuid.uuid4(),
                                   link_id=redirect.link_id,
